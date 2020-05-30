@@ -1498,7 +1498,7 @@ void gamecompleterender2(Graphics& dwgfx, Game& game, entityclass& obj, UtilityC
     //dwgfx.backbuffer.unlock();
 }
 
-void gamerender(Graphics& dwgfx, mapclass& map, Game& game, entityclass& obj, UtilityClass& help)
+void gamerender(Graphics& dwgfx, mapclass& map, Game& game, entityclass& obj, UtilityClass& help, SWNHook& swnHook)
 {
 
 
@@ -1634,30 +1634,41 @@ void gamerender(Graphics& dwgfx, mapclass& map, Game& game, entityclass& obj, Ut
                 dwgfx.Print( 240, 10, "Best Time", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), false);
                 dwgfx.bigrprint( 300, 24, tempstring, 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), false, 2);
 
-                switch(game.swnbestrank)
-                {
-                case 0:
-                    dwgfx.Print( -1, 204, "Next Trophy at 5 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
-                    break;
-                case 1:
-                    dwgfx.Print( -1, 204, "Next Trophy at 10 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
-                    break;
-                case 2:
-                    dwgfx.Print( -1, 204, "Next Trophy at 15 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
-                    break;
-                case 3:
-                    dwgfx.Print( -1, 204, "Next Trophy at 20 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
-                    break;
-                case 4:
-                    dwgfx.Print( -1, 204, "Next Trophy at 30 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
-                    break;
-                case 5:
-                    dwgfx.Print( -1, 204, "Next Trophy at 1 minute", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
-                    break;
-                case 6:
-                    dwgfx.Print( -1, 204, "All Trophies collected!", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
-                    break;
-                }
+		// Some quick info
+		
+                char buf[1000];
+                snprintf(buf, sizeof(buf), "Generation %ld, genome %ld", swnHook.getGenerationNumber() + 1, swnHook.getGenomeNumber() + 1);
+                dwgfx.Print( -1, 204, buf, 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+
+                snprintf(buf, sizeof(buf), "Best this gen %ld, best last gen %ld", (long)(swnHook.getCurrentGenerationBestFitness()), (long)(swnHook.getPreviousGenerationBestFitness()));
+                dwgfx.Print( -1, 214, buf, 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+
+		// mrb: Disabled to make room for other text
+		
+                // switch(game.swnbestrank)
+                // {
+                // case 0:
+                //     dwgfx.Print( -1, 204, "Next Trophy at 5 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+                //     break;
+                // case 1:
+                //     dwgfx.Print( -1, 204, "Next Trophy at 10 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+                //     break;
+                // case 2:
+                //     dwgfx.Print( -1, 204, "Next Trophy at 15 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+                //     break;
+                // case 3:
+                //     dwgfx.Print( -1, 204, "Next Trophy at 20 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+                //     break;
+                // case 4:
+                //     dwgfx.Print( -1, 204, "Next Trophy at 30 seconds", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+                //     break;
+                // case 5:
+                //     dwgfx.Print( -1, 204, "Next Trophy at 1 minute", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+                //     break;
+                // case 6:
+                //     dwgfx.Print( -1, 204, "All Trophies collected!", 220 - (help.glow), 220 - (help.glow), 255 - (help.glow / 2), true);
+                //     break;
+                // }
             }
             else if (game.swnmessage == 1)
             {

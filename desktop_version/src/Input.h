@@ -8,12 +8,13 @@
 #include "UtilityClass.h"
 #include "Music.h"
 #include "Map.h"
+#include "SWNHook.h"
 
 void titleinput(KeyPoll& key, Graphics& dwgfx, mapclass& map, Game& game,
                 entityclass& obj, UtilityClass& help, musicclass& music);
 
 void gameinput(KeyPoll& key, Graphics& dwgfx, Game& game, mapclass& map,
-               entityclass& obj, UtilityClass& help, musicclass& music);
+               entityclass& obj, UtilityClass& help, musicclass& music, SWNHook &swnHook);
 
 void mapinput(KeyPoll& key, Graphics& dwgfx, Game& game, mapclass& map,
               entityclass& obj, UtilityClass& help, musicclass& music);

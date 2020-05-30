@@ -7,13 +7,15 @@ PROJECT(VVVVVV)
 # Architecture Flags
 IF(APPLE)
 	# Wow, Apple is a huge jerk these days huh?
-	SET(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk)
+	SET(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk)
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
 	LINK_DIRECTORIES(/usr/local/lib)
 ENDIF()
 
 # Compiler Flags
 ADD_DEFINITIONS(-DPHYSFS_SUPPORTS_DEFAULT=0 -DPHYSFS_SUPPORTS_ZIP=1)
+
+set (CMAKE_CXX_STANDARD 11)
 
 # Executable Suffix
 IF(APPLE)
@@ -27,7 +29,7 @@ ELSE()
 ENDIF()
 
 # Include Directories
-INCLUDE_DIRECTORIES(src tinyxml physfs lodepng)
+INCLUDE_DIRECTORIES(src tinyxml physfs lodepng ../python3.8/include/python3.8)
 
 # Source Lists
 SET(VVV_SRC
@@ -55,6 +57,7 @@ SET(VVV_SRC
 	src/Scripts.cpp
 	src/SoundSystem.cpp
 	src/Spacestation2.cpp
+	src/SWNHook.cpp
 	src/TerminalScripts.cpp
 	src/Textbox.cpp
 	src/titlerender.cpp
@@ -100,7 +103,7 @@ ADD_LIBRARY(physfs-static STATIC ${PFS_SRC} ${PFSP_SRC})
 ADD_LIBRARY(lodepng-static STATIC ${PNG_SRC})
 
 # Static Dependencies
-TARGET_LINK_LIBRARIES(vvvvvv physfs-static tinyxml-static lodepng-static)
+TARGET_LINK_LIBRARIES(vvvvvv physfs-static tinyxml-static lodepng-static intl)
 
 # SDL2 Dependency (Detection pulled from FAudio)
 if (DEFINED SDL2_INCLUDE_DIRS AND DEFINED SDL2_LIBRARIES)
@@ -122,6 +125,10 @@ else()
 		target_link_libraries(vvvvvv ${SDL2_LIBRARIES} SDL2_mixer)
 	endif()
 endif()
+
+FIND_LIBRARY(PYTHON python3.8 ../python3.8/lib/python3.8/config-3.8-darwin)
+TARGET_LINK_LIBRARIES(vvvvvv ${PYTHON})
+FIND_LIBRARY(INTL intl)
 
 # Yes, more Apple Crap
 IF(APPLE)

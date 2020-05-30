@@ -1697,7 +1697,7 @@ SDL_assert(0 && "Remove open level dir");
 }
 
 void gameinput(KeyPoll& key, Graphics& dwgfx, Game& game, mapclass& map,
-               entityclass& obj, UtilityClass& help, musicclass& music)
+               entityclass& obj, UtilityClass& help, musicclass& music, SWNHook &swnHook)
 {
     //TODO mouse input
     //game.mx = (mouseX / 2);
@@ -1771,11 +1771,11 @@ void gameinput(KeyPoll& key, Graphics& dwgfx, Game& game, mapclass& map,
     { */
         if(!script.running)
         {
-            if (key.isDown(KEYBOARD_LEFT) || key.isDown(KEYBOARD_a) || key.controllerWantsLeft(false))
+            if (key.isDown(KEYBOARD_LEFT) || key.isDown(KEYBOARD_a) || key.controllerWantsLeft(false) || swnHook.pressLeft())
             {
                 game.press_left = true;
             }
-            if (key.isDown(KEYBOARD_RIGHT) || key.isDown(KEYBOARD_d) || key.controllerWantsRight(false))
+            if (key.isDown(KEYBOARD_RIGHT) || key.isDown(KEYBOARD_d) || key.controllerWantsRight(false) || swnHook.pressRight())
             {
                 game.press_right = true;
             }

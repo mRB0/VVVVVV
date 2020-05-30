@@ -25,6 +25,7 @@
 
 #include "FileSystemUtils.h"
 #include "Network.h"
+#include "SWNHook.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +37,8 @@ scriptclass script;
 
 int main(int argc, char *argv[])
 {
+    bool frameLimitDisabled = true;
+
     FILESYSTEM_init(argv[0]);
     SDL_Init(
         SDL_INIT_VIDEO |
@@ -98,6 +101,7 @@ int main(int argc, char *argv[])
     musicclass music;
     Game game;
     game.infocus = true;
+    game.muted = true;
 
     graphics.MakeTileArray();
     graphics.MakeSpriteArray();
@@ -211,6 +215,8 @@ int main(int argc, char *argv[])
     entityclass obj;
     obj.init();
 
+    SWNHook swnHook(game, obj);
+
     //Quick hack to start in final level ---- //Might be useful to leave this commented in for testing
     /*
     //game.gamestate=GAMEMODE;
@@ -247,29 +253,39 @@ int main(int argc, char *argv[])
         // Update network per frame.
         NETWORK_update();
 
-        //framerate limit to 30
-        Uint32 timetaken = time - timePrev;
-        if(game.gamestate==EDITORMODE)
-		{
-          if (timetaken < 24)
-          {
-              volatile Uint32 delay = 24 - timetaken;
-              SDL_Delay( delay );
-              time = SDL_GetTicks();
-          }
-          timePrev = time;
-
-        }else{
-          if (timetaken < game.gameframerate)
-          {
-              volatile Uint32 delay = game.gameframerate - timetaken;
-              SDL_Delay( delay );
-              time = SDL_GetTicks();
-          }
-          timePrev = time;
-
+	// Allow enabling/disabling the frame limit using the slash and period keys.
+        if (key.isDown(KEYBOARD_SLASH)) {
+            frameLimitDisabled = true;
         }
+        if (key.isDown(KEYBOARD_PERIOD)) {
+            frameLimitDisabled = false;
+        }   
 
+        if (!frameLimitDisabled) {
+            //framerate limit to 30
+
+            Uint32 timetaken = time - timePrev;
+            if(game.gamestate==EDITORMODE)
+    		{
+              if (timetaken < 24)
+              {
+                  volatile Uint32 delay = 24 - timetaken;
+                  SDL_Delay( delay );
+                  time = SDL_GetTicks();
+              }
+              timePrev = time;
+
+            }else{
+              if (timetaken < game.gameframerate)
+              {
+                  volatile Uint32 delay = game.gameframerate - timetaken;
+                  SDL_Delay( delay );
+                  time = SDL_GetTicks();
+              }
+              timePrev = time;
+
+            }
+        }
 
 
         key.Poll();
@@ -312,7 +328,7 @@ int main(int argc, char *argv[])
 			music.playef(2);
 		}*/
 
-        game.infocus = key.isActive;
+        game.infocus = true; // key.isActive;
         if(!game.infocus)
         {
             if(game.getGlobalSoundVol()> 0)
@@ -355,7 +371,7 @@ int main(int argc, char *argv[])
             case GAMEMODE:
                 if (map.towermode)
                 {
-					gameinput(key, graphics, game, map, obj, help, music);
+					gameinput(key, graphics, game, map, obj, help, music, swnHook);
 
                     //if(game.recording==1)
                     //{
@@ -382,9 +398,15 @@ int main(int argc, char *argv[])
                             script.run(key, graphics, game, map, obj, help, music);
                         }
 
-                        gameinput(key, graphics, game, map, obj, help, music);
+                        // mrb: processFrame here, figure out what keys to press
+                        swnHook.processFrame();
+
+                        // mrb: then gameinput needs to know what keys
+
+                        gameinput(key, graphics, game, map, obj, help, music, swnHook);
                         //}
-                        gamerender(graphics,map, game,  obj, help);
+
+                        gamerender(graphics,map, game,  obj, help, swnHook);
                         gamelogic(graphics, game,obj, music, map,  help);
 
 
@@ -420,7 +442,7 @@ int main(int argc, char *argv[])
                             {
                                 script.run(key, graphics, game, map, obj, help, music);
                             }
-                            gameinput(key, graphics, game, map, obj, help, music);
+                            gameinput(key, graphics, game, map, obj, help, music, swnHook);
                         }
                     }
                     maplogic(graphics, game,  obj, music, map, help);
