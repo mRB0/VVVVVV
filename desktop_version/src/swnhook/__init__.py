@@ -2,7 +2,7 @@ venv = "../../python3.8-venv/bin/activate_this.py"
 exec(open(venv).read(), {'__file__': venv})
 
 import os
-from pprint import pprint
+from pprint import pprint, pformat
 import random
 import threading
 import queue
@@ -50,7 +50,49 @@ class SWNHookReporter(neat.reporting.BaseReporter):
 def clamp(value, min_, max_):
     return max(min_, min(max_, value))
 
+class Constants:
+    min_player_y = 46
+    max_player_y = 161
+    min_player_x = -9
+    max_player_x = 310
+    min_player_vx = -6.0
+    max_player_vx = 6.0
+    min_player_vy = -10.0
+    max_player_vy = 10.0
+    player_x_size = max_player_x - min_player_x + 1
+
+class SkipPrinter:
+    def __init__(self):
+        self.frames_since_last_print = 0
+        self.printed_yet = False
+
+    def next(self):
+        self.frames_since_last_print += 1
+
+    def print(self, what=''):
+        if self.printed_yet:
+            if self.frames_since_last_print == 1:
+                print('---')
+            elif self.frames_since_last_print > 1:
+                print('--- {} frames with no output'.format(self.frames_since_last_print - 1))
+        self.printed_yet = True
+        self.frames_since_last_print = 0
+        print(what)
+
 class Main:
+
+    def _draw_enemy_inputs(self, enemy_inputs, num_slots_per_segment):
+        print("(left)")
+        for segment in range(len(enemy_inputs) // num_slots_per_segment // 2):
+            segment_inputs = [i for i in enemy_inputs[segment * num_slots_per_segment:(segment + 1) * num_slots_per_segment] if i < 1]
+            print(" | ".join(str(si) for si in segment_inputs))
+
+        print("(right)")
+        for segment in range(len(enemy_inputs) // num_slots_per_segment // 2, len(enemy_inputs) // num_slots_per_segment):
+            segment_inputs = [i for i in enemy_inputs[segment * num_slots_per_segment:(segment + 1) * num_slots_per_segment] if i > 0]
+            print(" | ".join(str(si) for si in segment_inputs))
+
+
 
     def _eval_genomes(self, genomes, config):
         # print("_eval_genomes: Starting")
@@ -82,10 +124,14 @@ class Main:
 
             # print("_eval_genomes: Starting new life")
 
+            printer = SkipPrinter()
+
             while True:
                 if not message.state['inGame'] or not message.state['alive']:
                     # died, break and return
                     break
+
+                printer.next()
 
                 genome.fitness += 1 # survived a frame
 
@@ -94,29 +140,18 @@ class Main:
 
                 inputs = []
 
-                playerXp = message.state['playerXp']
-                playerYp = message.state['playerYp']
-                playerVx = message.state['playerVx']
-                playerVy = message.state['playerVy']
+                playerXp = message.state['playerXPosition']
+                playerYp = message.state['playerYPosition']
+                playerVx = message.state['playerXVelocity']
+                playerVy = message.state['playerYVelocity']
 
-                min_player_y = 46
-                max_player_y = 161
-                min_player_x = -9
-                max_player_x = 310
-                min_player_vx = -6.0
-                max_player_vx = 6.0
-                min_player_vy = -10.0
-                max_player_vy = 10.0
-                player_x_size = max_player_x - min_player_x + 1
-
-                inputs.append(clamp((playerXp - min_player_x) / (max_player_x - min_player_x), 0, 1))
-                inputs.append(clamp((playerYp - min_player_y) / (max_player_y - min_player_y), 0, 1))
-                inputs.append(clamp((playerVx - min_player_vx) / (max_player_vx - min_player_vx), 0, -1))
-                inputs.append(clamp((playerVy - min_player_vy) / (max_player_vy - min_player_vy), 0, -1))
+                # Normalize inputs between 0 and 1
+                inputs.append(clamp((playerXp - Constants.min_player_x) / (Constants.max_player_x - Constants.min_player_x), 0, 1))
+                inputs.append(clamp((playerYp - Constants.min_player_y) / (Constants.max_player_y - Constants.min_player_y), 0, 1))
+                inputs.append(clamp((playerVx - Constants.min_player_vx) / (Constants.max_player_vx - Constants.min_player_vx), 0, 1))
+                inputs.append(clamp((playerVy - Constants.min_player_vy) / (Constants.max_player_vy - Constants.min_player_vy), 0, 1))
 
                 enemies = list(message.state['activeEnemies'])
-
-                enemies_offs = len(inputs)
 
                 # first half inputs are for enemies moving left,
                 # next half for enemies moving right,
@@ -128,31 +163,25 @@ class Main:
 
                 enemies.sort(key=lambda enemy: (
                     enemy['direction'],
-                    enemy['xp'] - playerXp
+                    enemy['xPosition'] - playerXp
                     ))
 
                 num_slots_per_direction = len(enemy_inputs) // 2
                 num_segments_per_direction = 6
                 num_slots_per_segment = num_slots_per_direction // num_segments_per_direction
 
-                printed_warning = False
-
                 for enemy in enemies:
-                    segment = (enemy['yp'] - 58) // 20
+                    segment = (enemy['yPosition'] - 58) // 20
 
                     direction_offset = num_slots_per_direction if enemy['direction'] > 0 else 0
 
                     for slot in range(num_slots_per_segment):
                         offset = segment * num_slots_per_segment + slot + direction_offset
                         if enemy_inputs[offset] is None:
-                            enemy_inputs[offset] = enemy['xp'] - playerXp
+                            enemy_inputs[offset] = enemy['xPosition'] - playerXp
                             break
                     else:
-                        print("warning: projectile at y={}, dir={}, distance={} couldn't fit in segment {}".format(enemy['yp'], enemy['direction'], enemy['xp'] - playerXp, segment))
-                        printed_warning = True
-
-                if printed_warning:
-                    print()
+                        printer.print("warning: projectile at y={}, dir={}, distance={} couldn't fit in segment {}".format(enemy['yPosition'], enemy['direction'], enemy['xPosition'] - playerXp, segment))
 
                 # change Nones to distant values
                 enemy_inputs = ([d if d is not None else 10000 for d in enemy_inputs[:len(enemy_inputs)//2]] +
@@ -165,78 +194,41 @@ class Main:
 
                 inputs.extend(enemy_inputs)
 
-                #pprint(inputs)
-                player_xp_norm = inputs[0]
-                player_yp_norm = inputs[1]
+                #self._draw_enemy_inputs(enemy_inputs, num_slots_per_segment)
 
                 draw_width = 80
                 draw_xborder = 1
 
-                # --- game board visualization
+                scores = net.advance(inputs, 1, 1) # list of 3 items: left score, middle score, right score; the highest score is the direction we should press
+                indexed_scores = {t[0] - 1: t[1] for t in enumerate(scores)} # {-1: left_score, 0: nothing_score, 1: right_score}
 
-                # print('---')
+                highest_score = max(scores) # get the highest-scoring direction
 
-                # for segment in range(num_segments_per_direction):
-                #     segment_min_y_norm = segment / num_segments_per_direction
-                #     segment_max_y_norm = (segment + 1) / num_segments_per_direction
-                #     show_player = (segment_min_y_norm <= player_yp_norm < segment_max_y_norm)
+                highest_scoring_directions = [direction for (direction, score) in indexed_scores.items() if score == highest_score] # get the indexes of all highest-scoring directions (ie. handle ties)
 
-                #     segment_draw = [' '] * (draw_width + (draw_xborder * 2))
-
-                #     for direction_offset in (0, num_slots_per_direction):
-                #         for slot in range(num_slots_per_segment):
-                #             offset = segment * num_slots_per_segment + slot + direction_offset
-                #             distance_from_player = enemy_inputs[offset]
-                #             if distance_from_player > 0.01 and distance_from_player < 0.99:
-                #                 # TODO: this calculation is wrong, and entities appear onscreen even when they aren't - but only if they're far from the player
-                #                 entity_xp = ((player_xp_norm * player_x_size) + ((distance_from_player - 0.5) * max_distance)) / player_x_size
-
-                #                 draw_xp = math.floor(entity_xp * draw_width)
-                #                 if draw_xp < 0 or draw_xp >= draw_width:
-                #                     draw_xp = clamp(draw_xp, -1, draw_width)
-                #                     segment_draw[draw_xp] = '|'
-                #                 else:
-                #                     segment_draw[draw_xp + draw_xborder] = '>' if direction_offset == num_slots_per_direction else '<'
-
-                #     if show_player:
-                #         draw_player_xp = clamp(math.floor(player_xp_norm * draw_width), 0, draw_width - 1)
-                #         segment_draw[draw_player_xp + draw_xborder] = 'X'
-
-                #     print(''.join(segment_draw))
-
-
-
-                # -- enemy positions with direction
-
-                # enemies.sort(key=lambda enemy: abs(message.state['playerXp'] - enemy['xp'])) # nearest enemies first
-
-                # for enemy in enemies[:20]: # support up to 20 enemies
-                #     inputs.append(1) # 1 = active enemy slot
-                #     inputs.append(enemy['xp'])
-                #     inputs.append(enemy['yp'])
-                #     inputs.append(enemy['direction'])
-
-                # empty_slots = max(20 - len(enemies), 0)
-                # for i in range(empty_slots):
-                #     inputs.append(0) # inactive enemy slot
-                #     inputs.append(0) # unused
-                #     inputs.append(0) # unused
-                #     inputs.append(0) # unused
-
-                # action = net.activate(inputs)[0]
-                action = net.advance(inputs, 1, 1)[0]
-
-                if action < -0.5:
-                    pressed_direction = -1
-                    pressed_direction_description = 'left'
-                elif action > 0.5:
-                    pressed_direction = 1
-                    pressed_direction_description = 'right'
-                else:
+                if len(highest_scoring_directions) == 3:
+                    # a three-way tie = do nothing
                     pressed_direction = 0
-                    pressed_direction_description = 'nothing'
+                    pressed_direction_description = 'nothing (3-way tie)'
+                elif len(highest_scoring_directions) == 2:
+                    if 0 in highest_scoring_directions:
+                        # left/right + nothing = ignore nothing
+                        pressed_direction = -1 if -1 in highest_scoring_directions else 1
+                        pressed_direction_description = 'left (with nothing)' if -1 in highest_scoring_directions else 'right (with nothing)'
+                    else:
+                        # left/right beat nothing with equal scores
+                        pressed_direction = 0
+                        pressed_direction_description = 'nothing (left/right tied)'
+                else:
+                    pressed_direction = highest_scoring_directions[0]
+                    if pressed_direction == -1:
+                        pressed_direction_description = 'left'
+                    elif pressed_direction == 1:
+                        pressed_direction_description = 'right'
+                    else:
+                        pressed_direction_description = 'nothing'
 
-                #print("AI pressed {}".format(pressed_direction_description))
+                #printer.print("AI pressed {}".format(pressed_direction_description))
 
                 message.result_queue.put(pressed_direction)
 

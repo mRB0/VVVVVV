@@ -20,18 +20,18 @@ enum PressedDirection {
 
 struct Enemy {
     Direction direction;
-    int xp;
-    int yp;
+    int xPosition;
+    int yPosition;
 };
 
 struct GravitronState {
     bool inGame;
     bool alive;
     std::vector<Enemy> activeEnemies;
-    int playerXp;
-    int playerYp;
-    float playerVx;
-    float playerVy;
+    int playerXPosition;
+    int playerYPosition;
+    float playerXVelocity;
+    float playerYVelocity;
 };
 
 

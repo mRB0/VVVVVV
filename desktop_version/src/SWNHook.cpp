@@ -29,26 +29,26 @@ static PyObject *createDictForGravitronState(GravitronState const &state) {
     }
 
     {
-        PyObject *playerXp = PyLong_FromLong(state.playerXp);
-        PyDict_SetItemString(dict, "playerXp", playerXp);
+        PyObject *playerXp = PyLong_FromLong(state.playerXPosition);
+        PyDict_SetItemString(dict, "playerXPosition", playerXp);
         Py_DECREF(playerXp);
     }
 
     {
-        PyObject *playerYp = PyLong_FromLong(state.playerYp);
-        PyDict_SetItemString(dict, "playerYp", playerYp);
+        PyObject *playerYp = PyLong_FromLong(state.playerYPosition);
+        PyDict_SetItemString(dict, "playerYPosition", playerYp);
         Py_DECREF(playerYp);
     }
 
     {
-        PyObject *playerVx = PyFloat_FromDouble(state.playerVx);
-        PyDict_SetItemString(dict, "playerVx", playerVx);
+        PyObject *playerVx = PyFloat_FromDouble(state.playerXVelocity);
+        PyDict_SetItemString(dict, "playerXVelocity", playerVx);
         Py_DECREF(playerVx);
     }
 
     {
-        PyObject *playerVy = PyFloat_FromDouble(state.playerVy);
-        PyDict_SetItemString(dict, "playerVy", playerVy);
+        PyObject *playerVy = PyFloat_FromDouble(state.playerYVelocity);
+        PyDict_SetItemString(dict, "playerYVelocity", playerVy);
         Py_DECREF(playerVy);
     }
 
@@ -66,14 +66,14 @@ static PyObject *createDictForGravitronState(GravitronState const &state) {
             }
 
             {
-                PyObject *enemyXp = PyLong_FromLong(enemy.xp);
-                PyDict_SetItemString(enemyDict, "xp", enemyXp);
+                PyObject *enemyXp = PyLong_FromLong(enemy.xPosition);
+                PyDict_SetItemString(enemyDict, "xPosition", enemyXp);
                 Py_DECREF(enemyXp);
             }
 
             {
-                PyObject *enemyYp = PyLong_FromLong(enemy.yp);
-                PyDict_SetItemString(enemyDict, "yp", enemyYp);
+                PyObject *enemyYp = PyLong_FromLong(enemy.yPosition);
+                PyDict_SetItemString(enemyDict, "yPosition", enemyYp);
                 Py_DECREF(enemyYp);
             }
 
@@ -294,10 +294,10 @@ void SWNHook::updateState() {
         state.activeEnemies.push_back({direction, entity.xp, entity.yp});
     }
 
-    state.playerXp = player->xp;
-    state.playerYp = player->yp;
-    state.playerVx = player->vx;
-    state.playerVy = player->vy;
+    state.playerXPosition = player->xp;
+    state.playerYPosition = player->yp;
+    state.playerXVelocity = player->vx;
+    state.playerYVelocity = player->vy;
 
     //fprintf(stderr, "Player (%d, %d) X-velocity (%f, %f)\n", state.playerXp, state.playerYp, state.playerVx, state.playerVy);
 
