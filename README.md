@@ -24,6 +24,8 @@ There are two versions of the VVVVVV source code available - the [desktop versio
 
 # mrb's notes
 
+## Build instructions
+
 I've only built on macOS 10.15 using Xcode 11.3. I installed third-party libs (like zlib and openssl) via brew.
 
 1. Python 3.8 has to be installed into python3.8. I built it from source. On macOS 10.15, I had problems getting Python to find zlib and openssl. I had to do something like this:
@@ -41,3 +43,11 @@ I've only built on macOS 10.15 using Xcode 11.3. I installed third-party libs (l
         ./python3.8-venv/bin/pip install -r desktop_version/src/swnhook/requirements.txt
 
 3. Follow build instructions as normal. Copy data.zip from the commercial game into flibitBuild in order to run, and run it with `flibitBuild` as your working directory.
+
+## Invocation notes
+
+    cd desktop_version/flibitBuild
+    ./vvvvvv.osx
+
+* SWNHook.cpp has a relative path reference to `../src`, where it expects to find the `swnhook` python module (ie. `desktop_version/src/swnhook`). Assumption is that you're running it from `desktop_version/flibitBuild`, a directory that's a sibling to `src/`.
+* `desktop_version/src/swnhook/__init__.py` contains a reference to `../../python3.8-venv/bin/activate_this.py` which is checked in to the repo. Assumption is that you're running from `desktop_version/flibitBuild` and put your Python venv into `<git_root>/python3.8-venv`.
